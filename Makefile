@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -Wall -g -std=c11
+CFLAGS = -Wall -g -std=c11 -m64
 LDLIBS = -lm
 ALL = main
 MAINS = $(addsuffix .o, $(ALL))
@@ -12,7 +12,7 @@ clean:
 	rm -f $(ALL) $(OBJ)
 
 $(OBJ): %.o : %.c $(DEPS)
-	$(CC) -c -o $@ $< $(CCFLAGS)
+	$(CC) -c -o $@ $< $(CFLAGS)
 
 $(ALL): % : $(filter-out $(MAINS), $(OBJ)) %.o
-	$(CC) -o $@ $(LIBS) $^ $(CCFLAGS) $(LDFLAGS)
+	$(CC) -o $@ $(LIBS) $^ $(CFLAGS) $(LDFLAGS)

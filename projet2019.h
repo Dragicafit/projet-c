@@ -1,3 +1,25 @@
+struct node
+{
+	struct node* next;
+	struct node* previous;
+	double data;
+};
+
+typedef union
+{
+	intmax_t a;
+	void* adr;
+	long doublec;
+} align_data;
+
+typedef struct
+{
+	ptrdiff_t next;
+	ptrdiff_t previous;
+	size_t len;
+	align_data data[];
+} node;
+
 void* ld_create(size_t nboctets);
 void* ld_first(void* liste);
 void* ld_last(void* liste);
