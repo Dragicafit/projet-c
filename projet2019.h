@@ -1,10 +1,3 @@
-struct node
-{
-	struct node* next;
-	struct node* previous;
-	double data;
-};
-
 typedef union
 {
 	intmax_t a;
@@ -14,38 +7,38 @@ typedef union
 
 typedef struct
 {
-	ptrdiff_t next;
-	ptrdiff_t previous;
+	node* next;
+	node* previous;
 	size_t len;
 	align_data data[];
 } node;
 
 typedef struct {
-	ptrdiff_t suivant;
+	entete_tranche* suivant;
 	size_t nb_blocs;
 } entete_tranche;
 
 typedef struct {
 	void* memory; //pointeur vers la memoire
-	ptrdiff_t first; //ptrdiff_t ou pointeur
-	ptrdiff_t last; //ptrdiff_t ou pointeur
+	node* first; //ptrdiff_t ou pointeur
+	node* last; //ptrdiff_t ou pointeur
 	entete_tranche* libre; //ptrdiff_t ou pointeur si la liste de tranches
 	//toute autre information
 } head;
 
-void* ld_create(size_t nboctets);
-void* ld_first(void* liste);
-void* ld_last(void* liste);
-void* ld_next(void* liste, void* current);
-void* ld_previous(void* liste, void* current);
-void ld_destroy(void* liste);
-size_t ld_get(void* liste, void* current, size_t len, void* val);
-void* ld_insert_first(void* liste, size_t len, void* p_data);
-void* ld_insert_last(void* liste, size_t len, void* p_data);
-void* ld_insert_before(void* liste, void* n, size_t len, void* p_data);
-void* ld_insert_after(void* liste, void* n, size_t len, void* p_data);
-void* ld_delete_node(void* liste, void* n);
-size_t  ld_total_free_memory(void* liste);
-size_t  ld_total_useful_memory(void* liste);
-void* ld_add_memory(void* liste, size_t nboctets);
-void* ld_compactify(void* liste);
+head* ld_create(size_t nboctets);
+node* ld_first(head* liste);
+node* ld_last(head* liste);
+node* ld_next(head* liste, node* current);
+node* ld_previous(head* liste, node* current);
+void ld_destroy(head* liste);
+size_t ld_get(head* liste, node* current, size_t len, align_data* val);
+node* ld_insert_first(head* liste, size_t len, align_data* p_data);
+node* ld_insert_last(head* liste, size_t len, align_data* p_data);
+node* ld_insert_before(head* liste, node* n, size_t len, align_data* p_data);
+node* ld_insert_after(head* liste, node* n, size_t len, align_data* p_data);
+node* ld_delete_node(head* liste, node* n);
+size_t  ld_total_free_memory(head* liste);
+size_t  ld_total_useful_memory(head* liste);
+head* ld_add_memory(head* liste, size_t nboctets);
+head* ld_compactify(head* liste);

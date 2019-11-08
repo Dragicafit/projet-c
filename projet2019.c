@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <assert.h>
 
 #include "projet2019.h"
 
@@ -11,79 +12,74 @@ size_t nb_blocs(size_t o)
 }
 
 
-void* ld_create(size_t nboctets)
+head* ld_create(size_t nboctets)
 {
 	head* tete = malloc(sizeof(head));
+	assert(tete == NULL);
 	tete->memory = malloc(nb_blocs(nboctets) * sizeof(align_data));
-	tete->first = 0;
-	tete->last = 0;
+	assert(tete->memory == NULL);
+	tete->first = NULL;
+	tete->last = NULL;
 	tete->libre = tete->memory;
-	(tete->libre)->suivant = 0;
+	(tete->libre)->suivant = NULL;
 	(tete->libre)->nb_blocs = nb_blocs(nboctets)-1;
 	return tete;
 }
 
 
-void* ld_first(void* liste)
+node* ld_first(head* liste)
 {
-	ptrdiff_t first = ((head*) liste)->first;
-	return first != 0 ? first : NULL;
+	return liste->first;
 }
 
 
-void* ld_last(void* liste)
+node* ld_last(head* liste)
 {
-	ptrdiff_t last = ((head*) liste)->last;
-	return last != 0 ? last : NULL;
+	return liste->last;
 }
 
-void* ld_next(void* liste, void* current)
+node* ld_next(head* liste, node* current)
 {
-	if (liste == current)
-	{
-		return ld_first(liste);
-	}
-	else
-	{
-		ptrdiff_t next = ((node*) current)->next;
-		return next != 0 ? next : NULL;
-	}
+	return liste == current ? ld_first(liste) : current->next;
 }
 
-void* ld_previous(void* liste, void* current)
+node* ld_previous(head* liste, node* current)
 {
-	return liste == current ? NULL : ((node*)current)->previous;
+	return liste == current ? NULL : current->previous;
 }
 
-void suppression(entete_tranche* libre)
+void ld_destroy(head* liste)
 {
-
+	free(liste->memory);
+	free(liste);
 }
 
-void ld_destroy(void* liste)
+size_t ld_get(head* liste, node* current, size_t len, align_data* val)
 {
-	head* tete = (head*)liste;
-	free(tete->memory);
-	free(tete);
-}
-
-size_t ld_get(void* liste, void* current, size_t len, void* val)
-{
-	node* noeud = (node*)current;
-	size_t nboctets = noeud->len < len ? noeud->len : len;
+	size_t nboctets = current->len < len ? current->len : len;
 	for (int i = 0; i < nboctets; i++)
 	{
-		((align_data*) val)[i] = noeud->data[i];
+		val[i] = current->data[i];
 	}
 	return nboctets;
 }
 
-void* ld_create_node(void* liste, size_t len, void* p_data)
+entete_tranche* recherche_libre(entete_tranche* tranche, size_t len)
 {
+	if (tranche == NULL)
+		return NULL;
+	if (tranche->nb_blocs < len)
+		return recherche_libre(tranche->suivant, len);
+	return tranche;
+}
+
+void* ld_create_node(head* liste, size_t len, void* p_data)
+{
+
 	node* noeud = 
 }
 
-void* ld_insert_first(void* liste, size_t len, void* p_data)
+void* ld_insert_first(head* liste, size_t len, void* p_data)
 {
 	
 }

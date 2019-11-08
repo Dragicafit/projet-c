@@ -52,3 +52,9 @@ Mkfile.old
 dkms.conf
 
 .vs
+x64
+Debug
+Release
+*.sln
+*.vcxproj*
+main
