@@ -32,19 +32,19 @@ void test_size()
 
 void test_nb_blocs()
 {
-	int entree[] = {31,32,33};
-	int sortie[] = {4,4,5};
-	for (int i = 0; i < sizeof(entree)/sizeof(int); i++)
+	int64_t entree[] = {31,32,33};
+	int64_t sortie[] = {4,4,5};
+	for (int i = 0; i < sizeof(entree)/sizeof(int64_t); i++)
 	{
-		printf("nb_blocs(%d) = %d, attendu : %d\n", entree[i], nb_blocs(entree[i]), sortie[i]);
+		printf("nb_blocs(%ld) = %ld, attendu : %ld\n", entree[i], nb_blocs(entree[i]), sortie[i]);
 	}
 }
 
 void test_ld_create() {
-	int entree[] = { 31,32,33 };
-	for (int i = 0; i < sizeof(entree) / sizeof(int); i++)
+	int64_t entree[] = { 31,32,33 };
+	for (int i = 0; i < sizeof(entree) / sizeof(int64_t); i++)
 	{
 		head* tete = ld_create(entree[i]);
-		printf("nb_blocs(%d) = %d, attendu : %d\n", entree[i], nb_blocs(entree[i]));
+		printf("nb_blocs(%ld) = %ld, attendu : %ld\n", entree[i], nb_blocs(entree[i]));
 	}
 }

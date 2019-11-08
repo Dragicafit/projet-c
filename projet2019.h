@@ -5,16 +5,16 @@ typedef union
 	long doublec;
 } align_data;
 
-typedef struct
+typedef struct node
 {
-	node* next;
-	node* previous;
+	struct node* next;
+	struct node* previous;
 	size_t len;
 	align_data data[];
 } node;
 
-typedef struct {
-	entete_tranche* suivant;
+typedef struct entete_tranche {
+	struct entete_tranche* suivant;
 	size_t nb_blocs;
 } entete_tranche;
 
@@ -26,6 +26,7 @@ typedef struct {
 	//toute autre information
 } head;
 
+size_t nb_blocs(size_t o);
 head* ld_create(size_t nboctets);
 node* ld_first(head* liste);
 node* ld_last(head* liste);
@@ -33,6 +34,8 @@ node* ld_next(head* liste, node* current);
 node* ld_previous(head* liste, node* current);
 void ld_destroy(head* liste);
 size_t ld_get(head* liste, node* current, size_t len, align_data* val);
+entete_tranche* recherche_libre(entete_tranche* tranche, size_t len);
+node* ld_create_node(head* liste, size_t len, align_data* p_data);
 node* ld_insert_first(head* liste, size_t len, align_data* p_data);
 node* ld_insert_last(head* liste, size_t len, align_data* p_data);
 node* ld_insert_before(head* liste, node* n, size_t len, align_data* p_data);
