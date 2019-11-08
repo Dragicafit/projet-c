@@ -7,8 +7,11 @@
 
 int main() 
 {
-	printf("%d\n", nb_blocs(31));
-	printf("%d\n", nb_blocs(32));
-	printf("%d\n", nb_blocs(33));
+	head* tete = ld_create(32);
+	printf("%d\n", tete->memory);
+	printf("%d\n", tete->first);
+	printf("%d\n", tete->last);
+	printf("%d\n", tete->libre->nb_blocs);
+	printf("%d\n", tete->libre->suivant);
 	return 0;
 }

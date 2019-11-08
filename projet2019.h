@@ -20,6 +20,19 @@ typedef struct
 	align_data data[];
 } node;
 
+typedef struct {
+	ptrdiff_t suivant;
+	size_t nb_blocs;
+} entete_tranche;
+
+typedef struct {
+	void* memory; //pointeur vers la memoire
+	ptrdiff_t first; //ptrdiff_t ou pointeur
+	ptrdiff_t last; //ptrdiff_t ou pointeur
+	entete_tranche* libre; //ptrdiff_t ou pointeur si la liste de tranches
+	//toute autre information
+} head;
+
 void* ld_create(size_t nboctets);
 void* ld_first(void* liste);
 void* ld_last(void* liste);
