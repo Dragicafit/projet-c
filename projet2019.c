@@ -56,7 +56,7 @@ void ld_destroy(head* liste)
 
 size_t ld_get(head* liste, node* current, size_t len, align_data* val)
 {
-	size_t nboctets = current->len < len ? current->len : len;
+	size_t nboctets = current->len - sizeof(node) < len ? current->len : len;
 	for (int i = 0; i < nboctets; i++)
 	{
 		val[i] = current->data[i];
@@ -64,32 +64,61 @@ size_t ld_get(head* liste, node* current, size_t len, align_data* val)
 	return nboctets;
 }
 
-entete_tranche* recherche_libre(entete_tranche* tranche, size_t len)
+node* recherche_libre_bis(head* liste, size_t len)
 {
-	if (tranche==NULL || tranche->suivant == NULL)
+	if (liste == NULL || liste->libre == NULL)
 		return NULL;
-	if (tranche->suivant->nb_blocs < len)
-		return recherche_libre(tranche->suivant->suivant, len);
 
-	if (tranche->suivant->nb_blocs > len)
+	if (liste->libre->nb_blocs <= len + sizeof(entete_tranche))
+		return recherche_libre(liste->libre, len);
+
+	node* noeud = liste->libre;
+
+	if (liste->libre->nb_blocs == len) 
 	{
-		(tranche->suivant + len)->suivant = tranche->suivant->suivant;
-		(tranche->suivant + len)->nb_blocs = tranche->suivant->nb_blocs - len;
-		tranche->suivant = tranche->suivant + len;
+		liste->libre = liste->libre->suivant;
+		return noeud;
 	}
-	return tranche;
+
+	(liste->libre + len)->suivant = liste->libre->suivant;
+	(liste->libre + len)->nb_blocs = liste->libre->nb_blocs - len;
+	liste->libre = liste->libre + len;
+	return noeud;
+}
+
+node* recherche_libre(entete_tranche* tranche, size_t len)
+{
+	if (tranche == NULL || tranche->suivant == NULL)
+		return NULL;
+
+	if (tranche->suivant->nb_blocs <= len + sizeof(entete_tranche))
+		return recherche_libre(tranche->suivant, len);
+
+	node* noeud = tranche->suivant;
+
+	if (tranche->suivant->nb_blocs == len)
+	{
+		tranche->suivant = tranche->suivant->suivant;
+		return noeud;
+	}
+
+	(tranche->suivant + len)->suivant = tranche->suivant->suivant;
+	(tranche->suivant + len)->nb_blocs = tranche->suivant->nb_blocs - len;
+	tranche->suivant = tranche->suivant + len;
+	return noeud;
 }
 
 node* ld_create_node(head* liste, size_t len, align_data* p_data)
 {
-	node* noeud = (node*)recherche_libre(liste->libre, len + sizeof(node));
-	assert(noeud != NULL);
+	node* noeud = (node*)recherche_libre_bis(liste, len + sizeof(node));
+	if (noeud == NULL)
+		return NULL;
 	for (int i = 0; i < len; i++)
 	{
 		noeud->data[i] = *(p_data+i);
 
 	}
-	noeud->len = len;
+	noeud->len = len + sizeof(node);
 	noeud->next = NULL;
 	noeud->previous = NULL;
 	return noeud;
@@ -118,6 +147,8 @@ node* ld_insert_before(head* liste, node* n, size_t len, align_data* p_data)
 	noeud->next = n;
 	n->previous->next = noeud;
 	n->previous = noeud;
+	if (noeud->previous == NULL)
+		liste->first = noeud;
 	return noeud;
 }
 
@@ -128,10 +159,71 @@ node* ld_insert_after(head* liste, node* n, size_t len, align_data* p_data)
 	noeud->next = n->next;
 	n->next->previous = noeud;
 	n->next = noeud;
+	if (noeud->next == NULL)
+		liste->last = noeud;
 	return noeud;
 }
 
-node* ld_delete_node(head* liste, node* n)
+node* recherche_dernier(entete_tranche* tranche, node* noeud)
 {
+	if (tranche == NULL)
+		return NULL;
+	if (tranche->suivant == NULL)
+	{
+		tranche->suivant = (entete_tranche*)noeud;
+		tranche->suivant->suivant = NULL;
+		tranche->suivant->nb_blocs = noeud->len - sizeof(node) + sizeof(entete_tranche);
+		return noeud;
+	}
+	return recherche_dernier(tranche->suivant, noeud);
+}
 
+node* recherche_dernier_bis(head* liste, node* noeud)
+{
+	if (liste == NULL)
+		return NULL;
+	if (liste->libre == NULL)
+	{
+		liste->libre = (entete_tranche*) noeud;
+		liste->libre->suivant = NULL;
+		liste->libre->nb_blocs = noeud->len - sizeof(node) + sizeof(entete_tranche);
+		return noeud;
+	}
+	return recherche_dernier(liste->libre, noeud);
+}
+
+head* ld_delete_node(head* liste, node* n)
+{
+	if (recherche_dernier_bis(liste, n) == NULL)
+		return NULL;
+	n->next->previous = n->previous;
+	n->previous->next = n->next;
+	return liste;
+}
+
+size_t ld_total_free_memory(head* liste)
+{
+	size_t taille = 0;
+	for (entete_tranche* next = liste->libre; next != NULL; next = next->suivant)
+		taille += next->nb_blocs;
+	return taille * sizeof(align_data);
+}
+
+size_t ld_total_useful_memory(head* liste)
+{
+	size_t taille = 0;
+	for (entete_tranche* next = liste->libre; next != NULL; next = next->suivant)
+	{
+		if (next->nb_blocs>=sizeof(node))
+			taille += next->nb_blocs;
+	}
+	return taille * sizeof(align_data);
+}
+
+head* ld_add_memory(head* liste, size_t nboctets)
+{
+	liste->memory = realloc(liste->memory, sizeof(liste->memory) + nboctets);
+
+	for (entete_tranche* next = liste->libre; next != NULL; next = next->suivant)
+		;
 }
