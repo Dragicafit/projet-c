@@ -45,6 +45,6 @@ void test_ld_create() {
 	for (int i = 0; i < sizeof(entree) / sizeof(int64_t); i++)
 	{
 		head* tete = ld_create(entree[i]);
-		printf("nb_blocs(%ld) = %ld, attendu : %ld\n", entree[i], nb_blocs(entree[i]));
+		printf("nb_blocs(%ld) = %ld\n", entree[i], nb_blocs(entree[i]));
 	}
 }

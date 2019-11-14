@@ -8,7 +8,7 @@
 
 size_t nb_blocs(size_t o)
 {
-	return (o - 1) / sizeof(align_data) + 1;
+	return o==0?0:(o - 1) / sizeof(align_data) + 1;
 }
 
 
@@ -22,7 +22,7 @@ head* ld_create(size_t nboctets)
 	tete->last = NULL;
 	tete->libre = tete->memory;
 	(tete->libre)->suivant = NULL;
-	(tete->libre)->nb_blocs = nb_blocs(nboctets)-1;
+	(tete->libre)->nb_blocs = nb_blocs(nboctets);
 	return tete;
 }
 
@@ -72,7 +72,7 @@ node* recherche_libre_bis(head* liste, size_t len)
 	if (liste->libre->nb_blocs <= len + sizeof(entete_tranche))
 		return recherche_libre(liste->libre, len);
 
-	node* noeud = liste->libre;
+	node* noeud = (node*)liste->libre;
 
 	if (liste->libre->nb_blocs == len) 
 	{
@@ -94,7 +94,7 @@ node* recherche_libre(entete_tranche* tranche, size_t len)
 	if (tranche->suivant->nb_blocs <= len + sizeof(entete_tranche))
 		return recherche_libre(tranche->suivant, len);
 
-	node* noeud = tranche->suivant;
+	node* noeud = (node*)tranche->suivant;
 
 	if (tranche->suivant->nb_blocs == len)
 	{
@@ -222,8 +222,77 @@ size_t ld_total_useful_memory(head* liste)
 
 head* ld_add_memory(head* liste, size_t nboctets)
 {
-	liste->memory = realloc(liste->memory, sizeof(liste->memory) + nboctets);
+	if (nboctets == 0)
+		return liste;
+	size_t nbblocs = nb_blocs(nboctets);
+	size_t size = sizeof(liste->memory);
+	liste->memory = realloc(liste->memory, sizeof(liste->memory) + nbblocs * sizeof(align_data));
+	if (liste->memory == NULL)
+		return NULL;
+	entete_tranche* dernier = liste->memory + size;
 
-	for (entete_tranche* next = liste->libre; next != NULL; next = next->suivant)
-		;
+	entete_tranche* next = liste->libre;
+	if (next != NULL)
+	{
+		while (next->suivant != NULL)
+			next = next->suivant;
+		next->suivant = dernier;
+	}
+	else
+	{
+		liste->libre = dernier;
+	}
+	dernier->nb_blocs = nbblocs;
+	dernier->suivant = NULL;
+	return liste;
+}
+/*
+head* ld_compactify(head* liste)
+{
+	head* newHead = ld_create(sizeof(liste->memory));
+
+	for (node* noeud = liste->first; noeud != NULL; noeud = noeud->next)
+	{
+		if (ld_insert_last(newHead, noeud->len - sizeof(node), noeud->data) == NULL)
+			return NULL;
+	}
+	liste->first = newHead->first;
+	liste->last = newHead->last;
+	liste->libre = newHead->libre;
+	liste->memory = newHead->memory;
+	return liste;
+}
+*/
+head* ld_compactify(head* liste)
+{
+	head* new_liste = ld_create(sizeof(liste->memory));
+	if (new_liste == NULL)
+	{
+		return NULL;
+	}
+	node* noeud = liste->first;
+	node* new_node = new_liste->memory;
+	new_liste->first = new_node;
+	while (noeud != NULL)
+	{
+		new_node->next = NULL;
+		new_node->previous = new_liste->last;
+		new_node->previous->next = new_node;
+		new_node->len = noeud->len + sizeof(node);
+		for (int i = 0; i < noeud->len; i++)
+		{
+			new_node->data[i] = noeud->data[i];
+		}
+		new_liste->last = new_node;
+		noeud = noeud->next;
+		new_node += new_node->len * sizeof(align_data);
+	}
+	new_liste->libre = (entete_tranche*) new_node;
+	new_liste->libre->nb_blocs = (void*)new_liste->memory - (void*)new_node;
+	new_liste->libre->suivant = NULL;
+	liste->memory = new_liste->memory;
+	liste->libre = new_liste->libre;
+	liste->first = new_liste->first;
+	liste->last = new_liste->last;
+	return liste;
 }
