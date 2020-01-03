@@ -3,6 +3,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <assert.h>
+#include <string.h>
 
 #include "projet2019.h"
 
@@ -11,6 +12,35 @@ size_t nb_blocs(size_t o)
 	return o==0?0:(o - 1) / sizeof(align_data) + 1;
 }
 
+void ld_toString_bis(head* list, char* string)
+{
+	if (string == NULL)
+		return;
+	string[0] = '\0';
+	if (list == NULL)
+		return;
+
+	strcat(string, "[ ");
+	ld_toString(list->first, string);
+	strcat(string, " ]");
+}
+
+void ld_toString(node* noeud, char* string)
+{
+	if (noeud == NULL)
+		return;
+
+	align_data data[] = { 0 };
+	ld_get(noeud, 1, data);
+
+	char s2[10];
+	sprintf(s2, "%ld", data->doublec);
+	strcat(string, s2);
+	if (noeud->next == NULL)
+		return;
+	strcat(string, ", ");
+	ld_toString(noeud->next, string);
+}
 
 head* ld_create(size_t nboctets)
 {
@@ -21,17 +51,15 @@ head* ld_create(size_t nboctets)
 	tete->first = NULL;
 	tete->last = NULL;
 	tete->libre = tete->memory;
-	(tete->libre)->suivant = NULL;
-	(tete->libre)->nb_blocs = nb_blocs(nboctets);
+	tete->libre->suivant = NULL;
+	tete->libre->nb_blocs = nb_blocs(nboctets);
 	return tete;
 }
-
 
 node* ld_first(head* liste)
 {
 	return liste->first;
 }
-
 
 node* ld_last(head* liste)
 {
@@ -54,23 +82,30 @@ void ld_destroy(head* liste)
 	free(liste);
 }
 
-size_t ld_get(head* liste, node* current, size_t len, align_data* val)
+size_t ld_get(node* current, size_t len, align_data* val)
 {
-	size_t nboctets = current->len - sizeof(node) < len ? current->len : len;
-	for (int i = 0; i < nboctets; i++)
+	if (val == NULL)
+		return 0;
+	val->doublec = 0;
+	if (current == NULL)
+		return 0;
+	size_t nbBlocs = current->len - nb_blocs(sizeof(node)) < len ? current->len : len;
+	for (int i = 0; i < nbBlocs; i++)
 	{
 		val[i] = current->data[i];
 	}
-	return nboctets;
+	return nbBlocs;
 }
 
 node* recherche_libre_bis(head* liste, size_t len)
 {
 	if (liste == NULL || liste->libre == NULL)
 		return NULL;
-
-	if (liste->libre->nb_blocs <= len + sizeof(entete_tranche))
+	printf("\nddfdf\n");
+	if (liste->libre->nb_blocs <= len + nb_blocs(sizeof(entete_tranche))) {
+		printf("\nddfdf\n");
 		return recherche_libre(liste->libre, len);
+	}
 
 	node* noeud = (node*)liste->libre;
 
@@ -79,19 +114,19 @@ node* recherche_libre_bis(head* liste, size_t len)
 		liste->libre = liste->libre->suivant;
 		return noeud;
 	}
-
-	(liste->libre + len)->suivant = liste->libre->suivant;
-	(liste->libre + len)->nb_blocs = liste->libre->nb_blocs - len;
-	liste->libre = liste->libre + len;
+	liste->libre = liste->libre + len * sizeof(align_data);
+	liste->libre->suivant = ((entete_tranche*) noeud)->suivant;
+	liste->libre->nb_blocs = ((entete_tranche*)noeud)->nb_blocs - len;
 	return noeud;
 }
 
 node* recherche_libre(entete_tranche* tranche, size_t len)
 {
+	printf("\nddfdf\n");
 	if (tranche == NULL || tranche->suivant == NULL)
 		return NULL;
 
-	if (tranche->suivant->nb_blocs <= len + sizeof(entete_tranche))
+	if (tranche->suivant->nb_blocs <= len + nb_blocs(sizeof(entete_tranche)))
 		return recherche_libre(tranche->suivant, len);
 
 	node* noeud = (node*)tranche->suivant;
@@ -102,23 +137,23 @@ node* recherche_libre(entete_tranche* tranche, size_t len)
 		return noeud;
 	}
 
-	(tranche->suivant + len)->suivant = tranche->suivant->suivant;
-	(tranche->suivant + len)->nb_blocs = tranche->suivant->nb_blocs - len;
-	tranche->suivant = tranche->suivant + len;
+	tranche->suivant = tranche->suivant + len * sizeof(align_data);
+	tranche->suivant = ((entete_tranche*)noeud)->suivant;
+	tranche->nb_blocs = ((entete_tranche*)noeud)->nb_blocs - len;
 	return noeud;
 }
 
 node* ld_create_node(head* liste, size_t len, align_data* p_data)
 {
-	node* noeud = (node*)recherche_libre_bis(liste, len + sizeof(node));
+	node* noeud = (node*)recherche_libre_bis(liste, len + nb_blocs(sizeof(node)));
 	if (noeud == NULL)
 		return NULL;
 	for (int i = 0; i < len; i++)
 	{
-		noeud->data[i] = *(p_data+i);
+		noeud->data[i] = p_data[i];
 
 	}
-	noeud->len = len + sizeof(node);
+	noeud->len = len + nb_blocs(sizeof(node));
 	noeud->next = NULL;
 	noeud->previous = NULL;
 	return noeud;
@@ -127,7 +162,14 @@ node* ld_create_node(head* liste, size_t len, align_data* p_data)
 node* ld_insert_first(head* liste, size_t len, align_data* p_data)
 {
 	node* noeud = ld_create_node(liste, len, p_data);
+	if (noeud == NULL)
+		return NULL;
+
 	noeud->next = liste->first;
+	if (liste->first != NULL)
+		liste->first->previous = noeud;
+	else
+		liste->last = noeud;
 	liste->first = noeud;
 	return noeud;
 }
@@ -135,7 +177,14 @@ node* ld_insert_first(head* liste, size_t len, align_data* p_data)
 node* ld_insert_last(head* liste, size_t len, align_data* p_data)
 {
 	node* noeud = ld_create_node(liste, len, p_data);
+	if (noeud == NULL)
+		return NULL;
+
 	noeud->previous = liste->last;
+	if (liste->last != NULL)
+		liste->last->next = noeud;
+	else
+		liste->last = noeud;
 	liste->last = noeud;
 	return noeud;
 }
@@ -143,24 +192,30 @@ node* ld_insert_last(head* liste, size_t len, align_data* p_data)
 node* ld_insert_before(head* liste, node* n, size_t len, align_data* p_data)
 {
 	node* noeud = ld_create_node(liste, len, p_data);
+	if (noeud == NULL)
+		return NULL;
 	noeud->previous = n->previous;
 	noeud->next = n;
-	n->previous->next = noeud;
-	n->previous = noeud;
-	if (noeud->previous == NULL)
+	if (n->previous == NULL)
 		liste->first = noeud;
+	else
+		n->previous->next = noeud;
+	n->previous = noeud;
 	return noeud;
 }
 
 node* ld_insert_after(head* liste, node* n, size_t len, align_data* p_data)
 {
 	node* noeud = ld_create_node(liste, len, p_data);
-	noeud->previous = n;
+	if (noeud == NULL)
+		return NULL;
 	noeud->next = n->next;
-	n->next->previous = noeud;
-	n->next = noeud;
-	if (noeud->next == NULL)
+	noeud->previous = n;
+	if (n->next == NULL)
 		liste->last = noeud;
+	else
+		n->next->previous = noeud;
+	n->next = noeud;
 	return noeud;
 }
 
@@ -194,10 +249,18 @@ node* recherche_dernier_bis(head* liste, node* noeud)
 
 head* ld_delete_node(head* liste, node* n)
 {
+	node* previous = n->previous;
+	node* next = n->next;
 	if (recherche_dernier_bis(liste, n) == NULL)
 		return NULL;
-	n->next->previous = n->previous;
-	n->previous->next = n->next;
+	if (next != NULL)
+		next->previous = previous;
+	else
+		liste->last = previous;
+	if (previous != NULL)
+		previous->next = next;
+	else
+		liste->first = next;
 	return liste;
 }
 

@@ -2,8 +2,14 @@
 #include <stdlib.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <string.h>
 
 #include "projet2019.h"
+
+#define max(a,b) \
+   ({ __typeof__ (a) _a = (a); \
+       __typeof__ (b) _b = (b); \
+     _a > _b ? _a : _b; })
 
 void test();
 int main() 
@@ -14,20 +20,22 @@ int main()
 void test_size();
 void test_nb_blocs();
 void test_ld_create();
+void test_ld_get();
 
 void test()
 {
 	test_size();
 	test_nb_blocs();
 	test_ld_create();
+	test_ld_get();
 }
 
 void test_size()
 {
-	printf("sizeof(node) = %ld\n", sizeof(node));
-	printf("sizeof(align_data) = %ld\n", sizeof(align_data));
-	printf("sizeof(entete_tranche) = %ld\n", sizeof(entete_tranche));
-	printf("sizeof(head) = %ld\n", sizeof(head));
+	printf("sizeof(node) = %ld, attendu : %ld\n", sizeof(node), 2 * sizeof(void*) + sizeof(size_t));
+	printf("sizeof(align_data) = %ld, attendu : %ld\n", sizeof(align_data), max(max(sizeof(intmax_t), sizeof(void*)), sizeof(long)));
+	printf("sizeof(entete_tranche) = %ld, attendu : %ld\n", sizeof(entete_tranche), sizeof(void*)+sizeof(size_t));
+	printf("sizeof(head) = %ld, attendu : %ld\n", sizeof(head), 4 * sizeof(void*));
 }
 
 void test_nb_blocs()
@@ -45,6 +53,42 @@ void test_ld_create() {
 	for (int i = 0; i < sizeof(entree) / sizeof(int64_t); i++)
 	{
 		head* tete = ld_create(entree[i]);
-		printf("nb_blocs(%ld) = %ld\n", entree[i], nb_blocs(entree[i]));
+		printf("ld_create(%ld)->memory = %p, attendu : %s\n", entree[i], tete->memory, "!null");
+		printf("ld_create(%ld)->first = %p, attendu : %s\n", entree[i], tete->first, "null");
+		printf("ld_create(%ld)->last = %p, attendu : %s\n", entree[i], tete->last, "null");
+		printf("ld_create(%ld)->libre = %p, attendu : %p\n", entree[i], tete->libre, tete->memory);
+		printf("ld_create(%ld)->libre->suivant = %p, attendu : %s\n", entree[i], tete->libre->suivant, "null");
+		printf("ld_create(%ld)->libre->nb_blocs = %zi, attendu : %zi\n", entree[i], tete->libre->nb_blocs, nb_blocs(entree[i]));
+		ld_destroy(tete);
+	}
+}
+
+void test_ld_get() {
+	align_data entree[][9] = { {{1},{2},{3},{4},{5},{6},{7},{8},{9}},{{1.},{2.},{3.},{4.},{5.},{6.},{7.},{8.},{9.}} };
+	for (int i = 0; i < sizeof(entree) / (sizeof(align_data)*9); i++)
+	{
+		head* tete = ld_create(1000);
+		ld_insert_first(tete, nb_blocs(sizeof(entree[i][0])), &entree[i][0]);
+		ld_insert_last(tete, nb_blocs(sizeof(entree[i][1])), &entree[i][1]);
+		ld_insert_first(tete, nb_blocs(sizeof(entree[i][2])), &entree[i][2]);
+		ld_insert_first(tete, nb_blocs(sizeof(entree[i][3])), &entree[i][3]);
+		ld_insert_last(tete, nb_blocs(sizeof(entree[i][4])), &entree[i][4]);
+		ld_delete_node(tete, ld_insert_last(tete, nb_blocs(sizeof(entree[i][4])), &entree[i][4]));
+		ld_insert_before(tete, tete->last, nb_blocs(sizeof(entree[i][5])), &entree[i][5]);
+		ld_insert_before(tete, tete->first->next->next, nb_blocs(sizeof(entree[i][6])), &entree[i][6]);
+		ld_insert_after(tete, tete->first, nb_blocs(sizeof(entree[i][7])), &entree[i][7]);
+		ld_insert_after(tete, tete->first->next->next, nb_blocs(sizeof(entree[i][8])), &entree[i][8]);
+		char string[100] = "";
+		ld_toString_bis(tete, string);
+		char s_entree[100] = "[ ";
+		for (int j = 0; j < sizeof(entree[i]) / sizeof(align_data); j++)
+		{
+			char s2[10];
+			sprintf(s2, "%ld, ", entree[i][j].doublec);
+			strcat(s_entree, s2);
+		}
+		strcat(s_entree, "]");
+		printf("ld_insert_*(%s) = %s, attendu : [ %ld, %ld, %ld, %ld, %ld, %ld, %ld, %ld, %ld ]\n", s_entree, string, entree[i][3].doublec, entree[i][7].doublec, entree[i][2].doublec, entree[i][8].doublec, entree[i][6].doublec, entree[i][0].doublec, entree[i][1].doublec, entree[i][5].doublec, entree[i][4].doublec);
+		ld_destroy(tete);
 	}
 }
