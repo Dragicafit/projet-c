@@ -21,6 +21,7 @@ void test_size();
 void test_nb_blocs();
 void test_ld_create();
 void test_ld_get();
+void test_ld_total_free_memory()
 
 void test()
 {
@@ -28,6 +29,7 @@ void test()
 	test_nb_blocs();
 	test_ld_create();
 	test_ld_get();
+	test_ld_total_free_memory()
 }
 
 void test_size()
@@ -91,4 +93,33 @@ void test_ld_get() {
 		printf("ld_insert_*(%s) = %s, attendu : [ %ld, %ld, %ld, %ld, %ld, %ld, %ld, %ld, %ld ]\n", s_entree, string, entree[i][3].doublec, entree[i][7].doublec, entree[i][2].doublec, entree[i][8].doublec, entree[i][6].doublec, entree[i][0].doublec, entree[i][1].doublec, entree[i][5].doublec, entree[i][4].doublec);
 		ld_destroy(tete);
 	}
+}
+
+void test_ld_total_free_memory() {
+	head* tete = ld_create(100);
+	align_data entree[3] = { 12, 60, 52};
+	ld_insert_first(tete, nb_blocs(sizeof(entree[0])), entree[0]);
+	ld_insert_first(tete, nb_blocs(sizeof(entree[1])), entree[1]);
+	ld_insert_first(tete, nb_blocs(sizeof(entree[2])), entree[2]);
+	printf("ld_total_free_memory(%d), attendu : 88", ld_total_free_memory(tete))
+}
+
+void test_ld_compactify() {
+	head* tete = ld_create(100);
+	align_data entree[7] = { 12, 60, 52, 75, 3, 24, 145};
+	ld_insert_first(tete, nb_blocs(sizeof(entree[0])), entree[0]);
+	ld_insert_first(tete, nb_blocs(sizeof(entree[1])), entree[1]);
+	ld_insert_first(tete, nb_blocs(sizeof(entree[2])), entree[2]);
+	ld_insert_first(tete, nb_blocs(sizeof(entree[3])), entree[3]);
+	ld_insert_first(tete, nb_blocs(sizeof(entree[4])), entree[4]);
+	ld_insert_first(tete, nb_blocs(sizeof(entree[5])), entree[5]);
+	ld_insert_first(tete, nb_blocs(sizeof(entree[6])), entree[6]);
+	ld_delete_node(tete, entree[3]);
+	char string1[100] = "";
+	printf("ld_total_useful_memory(%d)", ld_total_useful_memory(tete));
+	printf("memory : %s", ld_toString_bis(tete, string1));
+	ld_compactify(tete);
+	char string2[100] = "";
+	printf("ld_total_useful_memory(%d)", ld_total_useful_memory(tete));
+	printf("memory : %s", ld_toString_bis(tete, string2));
 }
