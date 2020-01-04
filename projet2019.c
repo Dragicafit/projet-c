@@ -101,9 +101,7 @@ node* recherche_libre_bis(head* liste, size_t len)
 {
 	if (liste == NULL || liste->libre == NULL)
 		return NULL;
-	printf("\nddfdf\n");
 	if (liste->libre->nb_blocs <= len + nb_blocs(sizeof(entete_tranche))) {
-		printf("\nddfdf\n");
 		return recherche_libre(liste->libre, len);
 	}
 
@@ -122,7 +120,6 @@ node* recherche_libre_bis(head* liste, size_t len)
 
 node* recherche_libre(entete_tranche* tranche, size_t len)
 {
-	printf("\nddfdf\n");
 	if (tranche == NULL || tranche->suivant == NULL)
 		return NULL;
 
