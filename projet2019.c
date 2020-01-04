@@ -148,7 +148,6 @@ node* ld_create_node(head* liste, size_t len, align_data* p_data)
 	for (int i = 0; i < len; i++)
 	{
 		noeud->data[i] = p_data[i];
-
 	}
 	noeud->len = len + nb_blocs(sizeof(node));
 	noeud->next = NULL;
